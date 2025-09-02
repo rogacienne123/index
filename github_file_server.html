@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📁 Mon serveur de fichiers</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📁</text></svg>">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --text: #333;
+            --bg: #f8f9fa;
+            --white: #ffffff;
+            --shadow: rgba(0,0,0,0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            color: var(--text);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px var(--shadow);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .toolbar {
+            padding: 30px;
+            background: var(--bg);
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+            color: #666;
+        }
+        
+        .view-toggle {
+            display: flex;
+            background: white;
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+        
+        .view-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .view-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .files-container {
+            padding: 30px;
+            min-height: 400px;
+        }
+        
+        /* Vue grille */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        
+        .file-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        /* Vue liste */
+        .files-list {
+            display: none;
+        }
+        
+        .files-list.active {
+            display: block;
+        }
+        
+        .files-grid.active {
+            display: grid;
+        }
+        
+        .file-list-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+        
+        .file-list-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .file-icon {
+            font-size: 3em;
+            margin-right: 20px;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .file-info {
+            flex-grow: 1;
+        }
+        
+        .file-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+        
+        .file-details {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .file-size {
+            font-weight: 500;
+            color: var(--primary);
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .no-files {
+            text-align: center;
+            padding: 80px 20px;
+            color: #666;
+        }
+        
+        .no-files-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
+            .files-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-container {
+                min-width: auto;
+            }
+            
+            .file-list-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .file-icon {
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <header class="header">
+                <div class="header-content">
+                    <h1>📁 Mon serveur de fichiers</h1>
+                    <p>Téléchargez gratuitement tous mes fichiers !</p>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <span class="stat-number" id="fileCount">0</span>
+                            <span class="stat-label">Fichiers</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number" id="totalSize">0 MB</span>
+                            <span class="stat-label">Taille totale</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number" id="categoryCount">0</span>
+                            <span class="stat-label">Catégories</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="toolbar">
+                <div class="search-container">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Rechercher un fichier..." id="searchInput">
+                </div>
+                
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid">📊 Grille</button>
+                    <button class="view-btn" data-view="list">📋 Liste</button>
+                </div>
+            </div>
+
+            <div class="files-container">
+                <div class="files-grid active" id="filesGrid"></div>
+                <div class="files-list" id="filesList"></div>
+            </div>
+
+            <footer class="footer">
+                <p>✨ Hébergé gratuitement sur GitHub Pages • Tous droits réservés</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // 🚨 CONFIGURE TES FICHIERS ICI 🚨
+        const files = [
+            {
+                name: "SuperJeu.swf",
+                size: 15728640, // 15MB
+                url: "files/SuperJeu.swf",
+                description: "Jeu Flash rétro génial",
+                category: "Jeux"
+            },
+            {
+                name: "MonLogiciel.exe",
+                size: 52428800, // 50MB
+                url: "files/MonLogiciel.exe", 
+                description: "Application Windows utile",
+                category: "Logiciels"
+            },
+            {
+                name: "Pack_Musiques.zip",
+                size: 104857600, // 100MB
+                url: "files/Pack_Musiques.zip",
+                description: "Collection de mes musiques préférées",
+                category: "Musique"
+            },
+            {
+                name: "Film_Maison.mp4",
+                size: 1073741824, // 1GB
+                url: "files/Film_Maison.mp4",
+                description: "Vidéo de famille - souvenirs",
+                category: "Vidéos"
+            },
+            {
+                name: "Photos_Vacances.rar",
+                size: 209715200, // 200MB
+                url: "files/Photos_Vacances.rar", 
+                description: "Album photo de nos dernières vacances",
+                category: "Photos"
+            },
+            {
+                name: "Cours_Programmation.pdf",
+                size: 10485760, // 10MB
+                url: "files/Cours_Programmation.pdf",
+                description: "Manuel complet de programmation",
+                category: "Documents"
+            },
+            {
+                name: "ROM_Console.bin",
+                size: 8388608, // 8MB
+                url: "files/ROM_Console.bin",
+                description: "ROM de jeu rétro pour émulateur",
+                category: "Jeux"
+            },
+            {
+                name: "Samples_Audio.7z",
+                size: 31457280, // 30MB
+                url: "files/Samples_Audio.7z",
+                description: "Échantillons audio pour production musicale",
+                category: "Musique"
+            }
+            // Ajoute autant de fichiers que tu veux !
+        ];
+
+        // Fonctions utilitaires
+        function getFileIcon(filename) {
+            const ext = filename.toLowerCase().split('.').pop();
+            
+            const iconMap = {
+                // Archives
+                'zip': '🗜️', 'rar': '🗜️', '7z': '🗜️', 'tar': '🗜️', 'gz': '🗜️',
+                // Audio
+                'mp3': '🎵', 'wav': '🎵', 'flac': '🎵', 'ogg': '🎵', 'aac': '🎵',
+                // Vidéo
+                'mp4': '🎬', 'avi': '🎬', 'mkv': '🎬', 'mov': '🎬', 'wmv': '🎬',
+                // Images
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'bmp': '🖼️',
+                // Documents
+                'pdf': '📄', 'doc': '📄', 'docx': '📄', 'txt': '📄', 'rtf': '📄',
+                // Code
+                'html': '💻', 'css': '💻', 'js': '💻', 'php': '💻', 'py': '💻',
+                // Flash
+                'swf': '🎮', 'fla': '🎨',
+                // Exécutables
+                'exe': '⚙️', 'msi': '⚙️', 'app': '⚙️', 'deb': '⚙️', 'rpm': '⚙️',
+                // Images disque
+                'iso': '💿', 'img': '💿', 'dmg': '💿', 'bin': '💿'
+            };
+            
+            return iconMap[ext] || '📁';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function renderGridView(filesToRender = files) {
+            const grid = document.getElementById('filesGrid');
+            
+            if (filesToRender.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-files">
+                        <div class="no-files-icon">😕</div>
+                        <h3>Aucun fichier trouvé</h3>
+                        <p>Essayez de modifier votre recherche</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filesToRender.map(file => `
+                <div class="file-card">
+                    <div class="file-icon">${getFileIcon(file.name)}</div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-details">
+                            <div>📊 <span class="file-size">${formatBytes(file.size)}</span></div>
+                            <div>📂 ${file.category || 'Divers'}</div>
+                            <div style="margin-top: 8px; font-style: italic;">${file.description || 'Aucune description'}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <a href="${file.url}" download class="download-btn">
+                            ⬇️ Télécharger
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderListView(filesToRender = files) {
+            const list = document.getElementById('filesList');
+            
+            if (filesToRender.length === 0) {
+                list.innerHTML = `
+                    <div class="no-files">
+                        <div class="no-files-icon">😕</div>
+                        <h3>Aucun fichier trouvé</h3>
+                        <p>Essayez de modifier votre recherche</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = filesToRender.map(file => `
+                <div class="file-list-item">
+                    <div class="file-icon">${getFileIcon(file.name)}</div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-details">
+                            📊 <span class="file-size">${formatBytes(file.size)}</span> • 
+                            📂 ${file.category || 'Divers'} • 
+                            ${file.description || 'Aucune description'}
+                        </div>
+                    </div>
+                    <a href="${file.url}" download class="download-btn">
+                        ⬇️ Télécharger
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('fileCount').textContent = files.length;
+            
+            const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+            document.getElementById('totalSize').textContent = formatBytes(totalSize);
+            
+            const categories = [...new Set(files.map(f => f.category || 'Divers'))];
+            document.getElementById('categoryCount').textContent = categories.length;
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredFiles = files.filter(file => 
+                file.name.toLowerCase().includes(searchTerm) ||
+                (file.description && file.description.toLowerCase().includes(searchTerm)) ||
+                (file.category && file.category.toLowerCase().includes(searchTerm))
+            );
+            
+            const activeView = document.querySelector('.view-btn.active').dataset.view;
+            if (activeView === 'grid') {
+                renderGridView(filteredFiles);
+            } else {
+                renderListView(filteredFiles);
+            }
+        });
+
+        // Toggle entre vues grille et liste
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Mise à jour des boutons
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Affichage de la vue correspondante
+                const view = this.dataset.view;
+                const grid = document.getElementById('filesGrid');
+                const list = document.getElementById('filesList');
+                
+                if (view === 'grid') {
+                    grid.classList.add('active');
+                    grid.style.display = 'grid';
+                    list.classList.remove('active');
+                    list.style.display = 'none';
+                    renderGridView();
+                } else {
+                    list.classList.add('active');
+                    list.style.display = 'block';
+                    grid.classList.remove('active');
+                    grid.style.display = 'none';
+                    renderListView();
+                }
+            });
+        });
+
+        // Initialisation
+        renderGridView();
+        updateStats();
+    </script>
+</body>
+</html>
